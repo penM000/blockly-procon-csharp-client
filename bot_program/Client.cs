@@ -1,20 +1,23 @@
-﻿using Codeplex.Data;
-using Newtonsoft.Json.Linq;
-using SocketIOClient;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+//
+using Quobject.SocketIoClientDotNet.Client;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Codeplex.Data;
 
 namespace CHaser
 {
-
+    
     public class Client
     {
         //接続先
-        public string server_address = "http://127.0.0.1:3000/";
-
+        public string server_address = "http://localhost:3000/";
         //ルーム名
         public string room_name = "game_server_13";
-
 
 
         //プレイヤー名
@@ -32,13 +35,13 @@ namespace CHaser
 
         //ここより下はいじらない(わかるなら良し)
         //クラス内変数宣言
-        private SocketIO socket;                          //SocketIOのオブジェクト
-        private bool getready = false;                    //getreadyフラグ
+        private Socket socket;                          //SocketIOのオブジェクト
+        private bool getready=false;                    //getreadyフラグ
         private int[] response_data = null;             //returnする値
         private bool receive = false;                   //受信判定
         private bool exit_state = false;                //ゲーム終了判定
 
-
+        
 
         public static Client Create()
         {
@@ -49,14 +52,8 @@ namespace CHaser
         private Client()
         {
             connect_server();
-
         }
-        private string obj_to_json(string obj)
-        {
-            return obj.ToString().Remove(0, 1).Remove(obj.ToString().Length - 2, 1).Replace("\r\n", "").Replace("  ", "");
-        }
-
-
+        
         private void connect_server()
         {
             var message = new NewMessage()
@@ -69,9 +66,8 @@ namespace CHaser
 
 
             Console.Write("サーバー接続開始\n");
-
-            socket = new SocketIO(server_address);
-
+            socket = IO.Socket(server_address);
+      
 
             //Socketio イベント登録
             socket.On("joined_room", (obj) =>
@@ -83,7 +79,7 @@ namespace CHaser
             socket.On("error", (obj) =>
             {
                 Console.Write("エラー\n");
-                Console.WriteLine(obj_to_json(obj.ToString()));
+                Console.WriteLine(obj);
                 Console.Write("#######\n");
             });
             socket.On("game_result", (obj) =>
@@ -100,7 +96,7 @@ namespace CHaser
             socket.On("get_ready_rec", (obj) =>
 
             {
-
+                
 
                 //既に自分のターンならスキップ
                 if (getready == true)
@@ -108,69 +104,59 @@ namespace CHaser
 
                 }
                 //自分のターンでない場合
-                else if (obj_to_json(obj.ToString()) == "{}" && exit_state == false)
+                else if (obj.ToString() == "{}" && exit_state == false)
                 {
-
                     //Console.Write("notyourturn\n");
                     getready = false;
                 }
                 //自分のターンの場合
-                else if (exit_state == false)
+                else if(exit_state == false)
                 {
-
-                    //Console.WriteLine(json_str);
-                    var test = DynamicJson.Parse(obj_to_json(obj.ToString()));
-
+                    var test = DynamicJson.Parse(obj.ToString());
                     response_data = test.rec_data;
                     //Console.Write("yourturn\n");
-
+                    
                     getready = true;
                     receive = true;
                 }
                 //ゲームに勝敗がついている場合
                 else
                 {
-
-                }
+                    
+                }              
             });
             socket.On("look_rec", (obj) =>
-            {
-
-                var test = DynamicJson.Parse(obj_to_json(obj.ToString()));
+            { 
+                var test = DynamicJson.Parse(obj.ToString());
                 response_data = test.rec_data;
                 receive = true;
             });
             socket.On("search_rec", (obj) =>
             {
-
-                var test = DynamicJson.Parse(obj_to_json(obj.ToString()));
+                var test = DynamicJson.Parse(obj.ToString());
                 response_data = test.rec_data;
                 receive = true;
             });
             socket.On("move_rec", (obj) =>
             {
-
-                var test = DynamicJson.Parse(obj_to_json(obj.ToString()));
+                var test = DynamicJson.Parse(obj.ToString());
                 response_data = test.rec_data;
                 receive = true;
             });
             socket.On("put_rec", (obj) =>
             {
-
-                var test = DynamicJson.Parse(obj_to_json(obj.ToString()));
+                var test = DynamicJson.Parse(obj.ToString());
                 response_data = test.rec_data;
                 receive = true;
             });
-            socket.On("connect_error", (obj) =>
+            socket.On(Socket.EVENT_CONNECT_ERROR, (obj) =>
             {
                 Console.Write("サーバー接続に失敗しました\n");
                 //Console.WriteLine(obj);
-
+                
             });
 
-
-
-            socket.On("reconnecting", (obj) =>
+            socket.On(Socket.EVENT_RECONNECTING , (obj) =>
             {
                 Console.Write("サーバー接続に再接続しています\n");
                 //Console.WriteLine(obj);
@@ -178,15 +164,14 @@ namespace CHaser
             });
 
 
-            socket.OnConnected += async (sender, e) =>
+            socket.On("connect", () =>
             {
                 if (exit_state == false)
                 {
-                    await socket.EmitAsync("player_join", user);
+                    socket.Emit("player_join", user);
                     Console.Write("サーバー接続完了\n");
                 }
-            };
-            socket.ConnectAsync();
+            });
         }
 
 
@@ -199,19 +184,18 @@ namespace CHaser
             var task = sleepAsync(second);
             task.Wait();
         }
-        public int[] GetReady()
+        public  int[] GetReady()
         {
             //you_turnが発火するまで待機
-            while (getready == false)
-            {
+            while (getready==false){
                 //非同期一時停止でSocketIOの受信処理続行
-                socket.EmitAsync("get_ready", "");
+                socket.Emit("get_ready");
                 sleep(sleeptime);
             }
 
             return response_data;
         }
-        public int[] Ready()
+        public int[] Ready() 
         {
             return GetReady();
         }
@@ -297,9 +281,9 @@ namespace CHaser
             return Input("put_wall", "bottom");
         }
 
+     
 
-
-        public int[] Input(string mode, string direction)
+        public int[] Input(string mode,string direction)
         {
             //getreadyを行わず行動した場合
             if (getready == false)
@@ -308,11 +292,11 @@ namespace CHaser
                 return response_data;
             }
             //getreadyが行われている場合
-            else if (mode == "look" || mode == "search")
+            else if (mode=="look" || mode=="search")
             {
                 getready = false;
                 receive = false;
-                socket.EmitAsync(mode, direction);
+                socket.Emit(mode, direction);
                 while (receive == false)
                 {
                     sleep(sleeptime);
@@ -323,7 +307,7 @@ namespace CHaser
             {
                 getready = false;
                 receive = false;
-                socket.EmitAsync(mode, direction);
+                socket.Emit(mode, direction);
                 while (receive == false)
                 {
                     sleep(sleeptime);
@@ -340,7 +324,6 @@ namespace CHaser
         public String room_id { get; set; }
         public String name { get; set; }
     }
-
 
 
 
