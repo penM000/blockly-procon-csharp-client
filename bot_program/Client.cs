@@ -22,7 +22,7 @@ namespace CHaser
 
 
         //ロジックタイム
-        private double sleeptime = 0.1;
+        private double sleeptime = 0.05;
 
         //互換性用
         public int Port = 2010;
@@ -93,7 +93,10 @@ namespace CHaser
                 Console.Write("#######\n");
                 exit_state = true;
                 Console.Write("終了するにはなにかキーを押してください・・・\n");
-                Console.Read();
+                socket.DisconnectAsync();
+                sleep(sleeptime);
+                //Console.Read();
+
                 Environment.Exit(0);
             });
 
@@ -186,9 +189,9 @@ namespace CHaser
                     Console.Write("サーバー接続完了\n");
                 }
             };
-	    sleep(sleeptime);
+            sleep(sleeptime);
             socket.ConnectAsync();
-	    sleep(sleeptime/2);
+            sleep(0.5);
         }
 
 
@@ -207,7 +210,7 @@ namespace CHaser
             while (getready == false)
             {
                 //非同期一時停止でSocketIOの受信処理続行
-		sleep(sleeptime/2);
+                sleep(sleeptime/2);
                 socket.EmitAsync("get_ready", "");
                 sleep(sleeptime/2);
             }
@@ -304,6 +307,7 @@ namespace CHaser
 
         public int[] Input(string mode, string direction)
         {
+            sleep(0.1);
             //getreadyを行わず行動した場合
             if (getready == false)
             {
@@ -333,6 +337,7 @@ namespace CHaser
                 }
                 return response_data;
             }
+            
 
         }
 
