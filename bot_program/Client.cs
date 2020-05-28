@@ -186,7 +186,9 @@ namespace CHaser
                     Console.Write("サーバー接続完了\n");
                 }
             };
+	    sleep(sleeptime);
             socket.ConnectAsync();
+	    sleep(sleeptime/2);
         }
 
 
