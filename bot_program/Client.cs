@@ -205,8 +205,9 @@ namespace CHaser
             while (getready == false)
             {
                 //非同期一時停止でSocketIOの受信処理続行
+		sleep(sleeptime/2);
                 socket.EmitAsync("get_ready", "");
-                sleep(sleeptime);
+                sleep(sleeptime/2);
             }
 
             return response_data;
