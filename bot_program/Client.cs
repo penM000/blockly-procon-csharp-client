@@ -10,10 +10,10 @@ namespace CHaser
     public class Client
     {
         //接続先
-        public string server_address = "http://localhost:3000/";
+        public string server_address = "http://127.0.0.1:3000/";
 
         //ルーム名
-        public string room_name = "game_server_13";
+        public string room_name = "game_server_02";
 
 
 
@@ -22,7 +22,7 @@ namespace CHaser
 
 
         //ロジックタイム
-        private double sleeptime = 0.05;
+        private double sleeptime = 0.005;
 
         //互換性用
         public int Port = 2010;
@@ -76,25 +76,28 @@ namespace CHaser
             //Socketio イベント登録
             socket.On("joined_room", (obj) =>
             {
-                Console.Write("joined_room\n#######\n");
-                Console.WriteLine(obj);
-                Console.Write("#######\n");
+                //Console.Write("joined_room\n#######\n");
+                //Console.WriteLine(obj);
+                //Console.Write("#######\n");
             });
             socket.On("error", (obj) =>
             {
-                Console.Write("エラー:");
-                Console.WriteLine(obj_to_json(obj.ToString()));
+                //Console.Write("エラー:");
+                //Console.WriteLine(obj_to_json(obj.ToString()));
         
             });
             socket.On("game_result", (obj) =>
             {
-                Console.Write("game_result\n#######\n");
-                Console.WriteLine(obj);
-                Console.Write("#######\n");
+                //Console.Write("game_result\n#######\n");
+                //Console.WriteLine(obj);
+                //Console.Write("#######\n");
                 exit_state = true;
-                Console.Write("終了するにはなにかキーを押してください・・・\n");
-                socket.DisconnectAsync();
-                sleep(sleeptime);
+                //Console.Write("終了するにはなにかキーを押してください・・・\n");
+                //Console.WriteLine();
+                sleep(0.5);
+                var task2=socket.DisconnectAsync();
+                task2.Wait();
+                sleep(0.5);
                 //Console.Read();
 
                 Environment.Exit(0);
@@ -167,17 +170,10 @@ namespace CHaser
             socket.On("connect_error", (obj) =>
             {
                 Console.Write("サーバー接続に失敗しました\n");
-                //Console.WriteLine(obj);
-
             });
-
-
-
             socket.On("reconnecting", (obj) =>
             {
                 Console.Write("サーバー接続に再接続しています\n");
-                //Console.WriteLine(obj);
-
             });
 
 
@@ -189,9 +185,23 @@ namespace CHaser
                     Console.Write("サーバー接続完了\n");
                 }
             };
-            sleep(sleeptime);
-            socket.ConnectAsync();
             sleep(0.5);
+            var task =socket.ConnectAsync();
+            task.Wait();
+            sleep(0.5);
+        }
+
+        private void exit_state_check()
+        {
+            if (exit_state == true)
+            {
+                //ゲームが終了していたら止める
+                while (true)
+                {
+                    sleep(0.05);
+                }
+            }
+            return;
         }
 
 
@@ -206,13 +216,22 @@ namespace CHaser
         }
         public int[] GetReady()
         {
+            sleep(sleeptime);
+
+            
+            
+
             //you_turnが発火するまで待機
             while (getready == false)
             {
                 //非同期一時停止でSocketIOの受信処理続行
-                sleep(sleeptime/2);
-                socket.EmitAsync("get_ready", "");
-                sleep(sleeptime/2);
+
+                exit_state_check();
+                var task = socket.EmitAsync("get_ready", "");
+                task.Wait();
+                sleep(sleeptime);
+                
+                
             }
 
             return response_data;
@@ -307,7 +326,7 @@ namespace CHaser
 
         public int[] Input(string mode, string direction)
         {
-            sleep(0.1);
+            sleep(sleeptime);
             //getreadyを行わず行動した場合
             if (getready == false)
             {
@@ -319,7 +338,9 @@ namespace CHaser
             {
                 getready = false;
                 receive = false;
-                socket.EmitAsync(mode, direction);
+                exit_state_check();
+                var task =socket.EmitAsync(mode, direction);
+                task.Wait();
                 while (receive == false)
                 {
                     sleep(sleeptime);
@@ -330,7 +351,9 @@ namespace CHaser
             {
                 getready = false;
                 receive = false;
-                socket.EmitAsync(mode, direction);
+                exit_state_check();
+                var task =socket.EmitAsync(mode, direction);
+                task.Wait();
                 while (receive == false)
                 {
                     sleep(sleeptime);
