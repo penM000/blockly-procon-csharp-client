@@ -13,7 +13,7 @@ namespace CHaser
         public string server_address = "http://127.0.0.1:3000/";
 
         //ルーム名
-        public string room_name = "game_server_02";
+        public string room_name = "game_server_13";
 
 
 
@@ -22,7 +22,7 @@ namespace CHaser
 
 
         //ロジックタイム
-        private double sleeptime = 0.005;
+        private double sleeptime = 0.05;
 
         //互換性用
         public int Port = 2010;
@@ -76,29 +76,29 @@ namespace CHaser
             //Socketio イベント登録
             socket.On("joined_room", (obj) =>
             {
-                //Console.Write("joined_room\n#######\n");
-                //Console.WriteLine(obj);
-                //Console.Write("#######\n");
+                Console.Write("joined_room\n#######\n");
+                Console.WriteLine(obj);
+                Console.Write("#######\n");
             });
             socket.On("error", (obj) =>
             {
-                //Console.Write("エラー:");
-                //Console.WriteLine(obj_to_json(obj.ToString()));
+                Console.Write("エラー:");
+                Console.WriteLine(obj_to_json(obj.ToString()));
         
             });
             socket.On("game_result", (obj) =>
             {
-                //Console.Write("game_result\n#######\n");
-                //Console.WriteLine(obj);
-                //Console.Write("#######\n");
+                Console.Write("game_result\n#######\n");
+                Console.WriteLine(obj);
+                Console.Write("#######\n");
                 exit_state = true;
-                //Console.Write("終了するにはなにかキーを押してください・・・\n");
-                //Console.WriteLine();
+                Console.Write("終了するにはなにかキーを押してください・・・\n");
+                Console.WriteLine();
                 sleep(0.5);
                 var task2=socket.DisconnectAsync();
                 task2.Wait();
                 sleep(0.5);
-                //Console.Read();
+                Console.Read();
 
                 Environment.Exit(0);
             });
